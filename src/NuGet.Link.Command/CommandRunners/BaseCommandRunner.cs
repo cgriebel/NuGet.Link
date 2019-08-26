@@ -1,43 +1,27 @@
-﻿using NuGet.Commands;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+
+using NuGet.CommandLine;
+using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
-using NuGet.LibraryModel;
+using NuGet.Link.Command.Args;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Packaging.Rules;
 using NuGet.ProjectModel;
 using NuGet.Versioning;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Murphy.SymbolicLink;
+
+using static NuGet.Commands.PackCommandRunner;
 
 namespace NuGet.Link.Command
 {
-    public class LinkCommandRunner : PackCommandRunner
+    public class BaseCommandRunner
     {
-        public static string BasePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NugetLink");
-
-
         private PackArgs _packArgs;
-        private PackageBuilder _packageBuilder;
-        private CreateProjectFactory _createProjectFactory;
-        private const string Configuration = "configuration";
-
-        private static readonly HashSet<string> _allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-            NuGetConstants.ManifestExtension,
-            ".csproj",
-            ".vbproj",
-            ".fsproj",
-            ".nproj",
-            ".btproj",
-            ".dxjsproj",
-            ".json"
-        };
 
         private static readonly string[] _defaultExcludes = new[] {
             // Exclude previous package files
@@ -58,90 +42,65 @@ namespace NuGet.Link.Command
             @"tools\**\*.ps1".Replace('\\', Path.DirectorySeparatorChar)
         };
 
-        private static readonly IReadOnlyList<string> defaultIncludeFlags = LibraryIncludeFlagUtils.NoContent.ToString().Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
         private readonly HashSet<string> _excludes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        public LinkCommandRunner(PackArgs packArgs, CreateProjectFactory createProjectFactory, PackageBuilder packageBuilder)
-            : base(packArgs, createProjectFactory, packageBuilder)
-        {
-            this._packageBuilder = packageBuilder;
-            Init(packArgs, createProjectFactory);
-        }
+        private CreateProjectFactory _createProjectFactory;
 
-        public LinkCommandRunner(PackArgs packArgs, CreateProjectFactory createProjectFactory)
-            : base(packArgs, createProjectFactory)
+        public BaseCommandRunner(BaseArgs baseArgs)
+            //: base(packArgs, ProjectFactory.ProjectCreator)
         {
-            Init(packArgs, createProjectFactory);
-        }
+            _createProjectFactory = ProjectFactory.ProjectCreator;
+            var packArgs = new PackArgs();
+            packArgs.CurrentDirectory = baseArgs.CurrentDirectory;
+            packArgs.Logger = baseArgs.Console;
+            packArgs.Arguments = new string[0];
+            packArgs.MsBuildDirectory = new Lazy<string>(() => MsBuildUtility.GetMsBuildDirectoryFromMsBuildPath(null, null, baseArgs.Console).Value.Path);
 
-        private void Init(PackArgs packArgs, CreateProjectFactory createProjectFactory)
-        {
-            this._createProjectFactory = createProjectFactory;
+            // Get the input file
+            packArgs.Path = PackCommandRunner.GetInputFile(packArgs);
+
+            // Set the current directory if the files being packed are in a different directory
+            PackCommandRunner.SetupCurrentDirectory(packArgs);
+            packArgs.Build = false;
+            packArgs.Exclude = new string[0];
+            switch (baseArgs.Verbosity)
+            {
+                case Verbosity.Detailed:
+                    {
+                        packArgs.LogLevel = LogLevel.Verbose;
+                        break;
+                    }
+                case Verbosity.Normal:
+                    {
+                        packArgs.LogLevel = LogLevel.Information;
+                        break;
+                    }
+                case Verbosity.Quiet:
+                    {
+                        packArgs.LogLevel = LogLevel.Minimal;
+                        break;
+                    }
+            }
             this._packArgs = packArgs;
-            Rules = RuleSet.PackageCreationRuleSet;
-            GenerateNugetPackage = true;
         }
 
-        public new void BuildPackage()
+        public PackageBuilder CreatePackageBuilder()
         {
             var path = Path.GetFullPath(Path.Combine(_packArgs.CurrentDirectory, _packArgs.Path));
-            LinkPackage(path);
+            return CreatePackageBuilder(path);
         }
 
-        private void LinkPackage(string path)
+        private PackageBuilder CreatePackageBuilder(string path)
         {
             string extension = Path.GetExtension(path);
             if (extension.Equals(NuGetConstants.ManifestExtension, StringComparison.OrdinalIgnoreCase))
             {
-                LinkFromNuspec(path);
+                return CreatePackageBuilderFromNuspec(path);
             }
             else
             {
-                LinkFromProjectFile(path);
+                return CreatePackageBuilderFromProjectFile(path);
             }
-        }
-
-        private PackageArchiveReader LinkFromNuspec(string path)
-        {
-            PackageBuilder packageBuilder = CreatePackageBuilderFromNuspec(path);
-
-            PackageArchiveReader packageArchiveReader = null;
-
-            InitCommonPackageBuilderProperties(packageBuilder);
-
-            if (_packArgs.InstallPackageToOutputPath)
-            {
-                string outputPath = GetOutputPath(packageBuilder, _packArgs);
-                packageArchiveReader = BuildPackage(packageBuilder, outputPath: outputPath);
-            }
-            else
-            {
-                if (_packArgs.Symbols && packageBuilder.Files.Any())
-                {
-                    // remove source related files when building the lib package
-                    ExcludeFilesForLibPackage(packageBuilder.Files);
-
-                    if (!packageBuilder.Files.Any())
-                    {
-                        throw new PackagingException(NuGetLogCode.NU5004, string.Format(CultureInfo.CurrentCulture, Strings.Error_PackageCommandNoFilesForLibPackage, path, Strings.NuGetDocs));
-                    }
-                }
-
-                packageArchiveReader = BuildPackage(packageBuilder);
-
-                if (_packArgs.Symbols)
-                {
-                    BuildSymbolsPackage(path);
-                }
-            }
-
-            if (packageArchiveReader != null && !_packArgs.NoPackageAnalysis)
-            {
-                AnalyzePackage(packageArchiveReader);
-            }
-
-            return packageArchiveReader;
         }
 
         private PackageBuilder CreatePackageBuilderFromNuspec(string path)
@@ -161,15 +120,21 @@ namespace NuGet.Link.Command
                 noWarn: _packArgs.GetPropertyValue("NoWarn") ?? string.Empty);
                 _packArgs.Logger = new PackCollectorLogger(_packArgs.Logger, _packArgs.WarningProperties);
             }
-
+            PackageBuilder packageBuilder;
             if (string.IsNullOrEmpty(_packArgs.BasePath))
             {
-                return new PackageBuilder(path, _packArgs.GetPropertyValue, !_packArgs.ExcludeEmptyDirectories);
+                packageBuilder = new PackageBuilder(path, _packArgs.GetPropertyValue, !_packArgs.ExcludeEmptyDirectories);
             }
-            return new PackageBuilder(path, _packArgs.BasePath, _packArgs.GetPropertyValue, !_packArgs.ExcludeEmptyDirectories);
+            else
+            {
+                packageBuilder = new PackageBuilder(path, _packArgs.BasePath, _packArgs.GetPropertyValue, !_packArgs.ExcludeEmptyDirectories);
+            }
+
+            InitCommonPackageBuilderProperties(packageBuilder);
+            return packageBuilder;
         }
 
-        private void LinkFromProjectFile(string path)
+        private PackageBuilder CreatePackageBuilderFromProjectFile(string path)
         {
             // PackTargetArgs is only set for dotnet.exe pack code path, hence the check.
             if ((string.IsNullOrEmpty(_packArgs.MsBuildDirectory?.Value) || _createProjectFactory == null) && _packArgs.PackTargetArgs == null)
@@ -205,7 +170,7 @@ namespace NuGet.Link.Command
             }
 
             // Create a builder for the main package as well as the sources/symbols package
-            var mainPackageBuilder = factory.CreateBuilder(_packArgs.BasePath, version, _packArgs.Suffix, buildIfNeeded: true, builder: this._packageBuilder);
+            var mainPackageBuilder = factory.CreateBuilder(_packArgs.BasePath, version, _packArgs.Suffix, buildIfNeeded: true);
 
             if (mainPackageBuilder == null)
             {
@@ -213,30 +178,12 @@ namespace NuGet.Link.Command
             }
 
             InitCommonPackageBuilderProperties(mainPackageBuilder);
-
-            var packageRoot = Path.Combine(BasePath, mainPackageBuilder.Id, mainPackageBuilder.Version.ToNormalizedString());
-            Directory.CreateDirectory(packageRoot);
-            foreach(var file in mainPackageBuilder.Files)
-            {
-                if(file is PhysicalPackageFile physicalFile)
-                {
-                    var target = Path.Combine(packageRoot, file.Path);
-                    Directory.CreateDirectory(Path.GetDirectoryName(target));
-
-                    // TODO: Prompt for this, just delete for now
-                    if (File.Exists(target))
-                    {
-                        File.Delete(target);
-                    }
-
-                    SymbolicLink.create(physicalFile.SourcePath, target);
-                }
-            }
+            return mainPackageBuilder;
         }
 
         private void InitCommonPackageBuilderProperties(PackageBuilder builder)
         {
-            if (!String.IsNullOrEmpty(_packArgs.Version))
+            if (!string.IsNullOrEmpty(_packArgs.Version))
             {
                 builder.Version = new NuGetVersion(_packArgs.Version);
                 builder.HasSnapshotVersion = false;
@@ -269,29 +216,6 @@ namespace NuGet.Link.Command
             PathResolver.FilterPackageFiles(files, file => file.Path, _libPackageExcludes);
         }
 
-        private void BuildSymbolsPackage(string path)
-        {
-            var symbolsBuilder = CreatePackageBuilderFromNuspec(path);
-            if (_packArgs.SymbolPackageFormat == SymbolPackageFormat.Snupkg) // Snupkgs can only have 1 PackageType. 
-            {
-                symbolsBuilder.PackageTypes.Clear();
-                symbolsBuilder.PackageTypes.Add(PackageType.SymbolsPackage);
-            }
-
-            // remove unnecessary files when building the symbols package
-            ExcludeFilesForSymbolPackage(symbolsBuilder.Files, _packArgs.SymbolPackageFormat);
-
-            if (!symbolsBuilder.Files.Any())
-            {
-                throw new PackagingException(NuGetLogCode.NU5005, string.Format(CultureInfo.CurrentCulture, Strings.Error_PackageCommandNoFilesForSymbolsPackage, path, Strings.NuGetDocs));
-            }
-
-            var outputPath = GetOutputPath(symbolsBuilder, _packArgs, symbols: true);
-
-            InitCommonPackageBuilderProperties(symbolsBuilder);
-            BuildPackage(symbolsBuilder, outputPath)?.Dispose();
-        }
-
         internal static void ExcludeFilesForSymbolPackage(ICollection<IPackageFile> files, SymbolPackageFormat symbolPackageFormat)
         {
             PathResolver.FilterPackageFiles(files, file => file.Path, _symbolPackageExcludes);
@@ -307,7 +231,7 @@ namespace NuGet.Link.Command
 
         internal void AnalyzePackage(PackageArchiveReader package)
         {
-            IEnumerable<IPackageRule> packageRules = Rules;
+            IEnumerable<IPackageRule> packageRules = RuleSet.PackageCreationRuleSet;
             IList<PackagingLogMessage> issues = new List<PackagingLogMessage>();
 
             foreach (var rule in packageRules)
@@ -326,15 +250,10 @@ namespace NuGet.Link.Command
 
         private void PrintPackageIssue(PackagingLogMessage issue)
         {
-            if (!String.IsNullOrEmpty(issue.Message))
+            if (!string.IsNullOrEmpty(issue.Message))
             {
                 _packArgs.Logger.Log(issue);
             }
-        }
-
-        private void WriteLine(string message, object arg = null)
-        {
-            _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(String.Format(CultureInfo.CurrentCulture, message, arg?.ToString()), LogLevel.Information));
         }
 
         internal void ExcludeFiles(ICollection<IPackageFile> packageFiles)
@@ -355,7 +274,7 @@ namespace NuGet.Link.Command
                         {
                             var physicalPackageFile = file as PhysicalPackageFile;
                             _packArgs.Logger.Log(PackagingLogMessage.CreateWarning(
-                                String.Format(CultureInfo.CurrentCulture, Strings.Warning_FileExcludedByDefault, physicalPackageFile.SourcePath),
+                                string.Format(CultureInfo.CurrentCulture, Strings.Warning_FileExcludedByDefault, physicalPackageFile.SourcePath),
                                 NuGetLogCode.NU5119));
 
                         }
@@ -376,10 +295,8 @@ namespace NuGet.Link.Command
 
         private static string ResolvePath(IPackageFile packageFile, string basePath)
         {
-            var physicalPackageFile = packageFile as PhysicalPackageFile;
-
             // For PhysicalPackageFiles, we want to filter by SourcePaths, the path on disk. The Path value maps to the TargetPath
-            if (physicalPackageFile == null)
+            if (!(packageFile is PhysicalPackageFile physicalPackageFile))
             {
                 return packageFile.Path;
             }
@@ -397,6 +314,7 @@ namespace NuGet.Link.Command
 
             return path;
         }
+
         private void CheckForUnsupportedFrameworks(PackageBuilder builder)
         {
             foreach (var reference in builder.FrameworkReferences)
@@ -405,11 +323,10 @@ namespace NuGet.Link.Command
                 {
                     if (framework.IsUnsupported)
                     {
-                        throw new PackagingException(NuGetLogCode.NU5003, String.Format(CultureInfo.CurrentCulture, Strings.Error_InvalidTargetFramework, reference.AssemblyName));
+                        throw new PackagingException(NuGetLogCode.NU5003, string.Format(CultureInfo.CurrentCulture, Strings.Error_InvalidTargetFramework, reference.AssemblyName));
                     }
                 }
             }
         }
-
     }
 }

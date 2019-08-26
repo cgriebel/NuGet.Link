@@ -7,8 +7,8 @@
     <ProjectGuid>{84273D00-7ED3-4BB3-BA6F-53CD46CE3AC9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Package</RootNamespace>
-    <AssemblyName>Package</AssemblyName>
+    <RootNamespace>Package.Csproj</RootNamespace>
+    <AssemblyName>Package.Csproj</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -45,7 +45,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Package.nuspec" />
+    <None Include="Package.Csproj.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

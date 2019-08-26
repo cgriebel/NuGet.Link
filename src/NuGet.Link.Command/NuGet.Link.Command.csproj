@@ -31,7 +31,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -51,8 +50,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LinkCommand.cs" />
-    <Compile Include="LinkCommandRunner.cs" />
+    <Compile Include="Args\BaseArgs.cs" />
+    <Compile Include="Args\LinkArgs.cs" />
+    <Compile Include="Args\UnlinkArgs.cs" />
+    <Compile Include="CommandRunners\BaseCommandRunner.cs" />
+    <Compile Include="CommandRunners\UnlinkCommandRunner.cs" />
+    <Compile Include="Commands\UnlinkCommand.cs" />
+    <Compile Include="Commands\LinkCommand.cs" />
+    <Compile Include="CommandRunners\LinkCommandRunner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings.Designer.cs" />
   </ItemGroup>
