@@ -23,28 +23,45 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nuget.Link.Tests", "src\Nuget.Link.Tests\Nuget.Link.Tests.csproj", "{13987E63-70DC-4761-B742-21563A8340C4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.Configuration", "submodules\NuGet.Client\src\NuGet.Core\NuGet.Configuration\NuGet.Configuration.csproj", "{3DDE336E-8018-41E7-B1A6-A3C1AEB7CFB9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.Packaging", "submodules\NuGet.Client\src\NuGet.Core\NuGet.Packaging\NuGet.Packaging.csproj", "{B7CB7346-ACAC-4D4C-8882-06C50D1475B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_NugetExe|Any CPU = Debug_NugetExe|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BF585E11-5946-4F77-9282-75B1C48837A8}.Debug_NugetExe|Any CPU.ActiveCfg = Debug_NugetExe|Any CPU
+		{BF585E11-5946-4F77-9282-75B1C48837A8}.Debug_NugetExe|Any CPU.Build.0 = Debug_NugetExe|Any CPU
 		{BF585E11-5946-4F77-9282-75B1C48837A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BF585E11-5946-4F77-9282-75B1C48837A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF585E11-5946-4F77-9282-75B1C48837A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF585E11-5946-4F77-9282-75B1C48837A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF67335E-0832-4B0E-A439-8CCD54816434}.Debug_NugetExe|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF67335E-0832-4B0E-A439-8CCD54816434}.Debug_NugetExe|Any CPU.Build.0 = Debug|Any CPU
 		{BF67335E-0832-4B0E-A439-8CCD54816434}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BF67335E-0832-4B0E-A439-8CCD54816434}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF67335E-0832-4B0E-A439-8CCD54816434}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BF67335E-0832-4B0E-A439-8CCD54816434}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E}.Debug_NugetExe|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E}.Debug_NugetExe|Any CPU.Build.0 = Debug|Any CPU
 		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13987E63-70DC-4761-B742-21563A8340C4}.Debug_NugetExe|Any CPU.ActiveCfg = Debug_NugetExe|Any CPU
+		{13987E63-70DC-4761-B742-21563A8340C4}.Debug_NugetExe|Any CPU.Build.0 = Debug_NugetExe|Any CPU
 		{13987E63-70DC-4761-B742-21563A8340C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{13987E63-70DC-4761-B742-21563A8340C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13987E63-70DC-4761-B742-21563A8340C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13987E63-70DC-4761-B742-21563A8340C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DDE336E-8018-41E7-B1A6-A3C1AEB7CFB9}.Debug_NugetExe|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DDE336E-8018-41E7-B1A6-A3C1AEB7CFB9}.Debug_NugetExe|Any CPU.Build.0 = Debug|Any CPU
+		{3DDE336E-8018-41E7-B1A6-A3C1AEB7CFB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DDE336E-8018-41E7-B1A6-A3C1AEB7CFB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7CB7346-ACAC-4D4C-8882-06C50D1475B8}.Debug_NugetExe|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7CB7346-ACAC-4D4C-8882-06C50D1475B8}.Debug_NugetExe|Any CPU.Build.0 = Debug|Any CPU
+		{B7CB7346-ACAC-4D4C-8882-06C50D1475B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7CB7346-ACAC-4D4C-8882-06C50D1475B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,6 +69,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{BF67335E-0832-4B0E-A439-8CCD54816434} = {23D67770-E822-411A-B0E3-57D56C3EBCA1}
 		{FF1B9826-43B5-48A2-90B0-9ED11CFD3C2E} = {B7E71E48-7D3C-45CE-B844-99234AD8C69B}
+		{3DDE336E-8018-41E7-B1A6-A3C1AEB7CFB9} = {B7E71E48-7D3C-45CE-B844-99234AD8C69B}
+		{B7CB7346-ACAC-4D4C-8882-06C50D1475B8} = {B7E71E48-7D3C-45CE-B844-99234AD8C69B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F61EA04C-EB41-467A-9322-0226E70761F1}

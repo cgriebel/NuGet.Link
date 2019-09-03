@@ -1,13 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0">
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <NugetReferenceRoot>..\..\submodules\NuGet.Client\artifacts\</NugetReferenceRoot>
-    <NugetReferenceSubpath>\16.0\bin\Debug\net472\</NugetReferenceSubpath>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <NugetReferenceRoot>..\..\packages\</NugetReferenceRoot>
-    <NugetReferenceSubpath>.5.1.0\lib\net472\</NugetReferenceSubpath>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\FSharp.Core.4.2.3\lib\net45\FSharp.Core.dll</HintPath>
@@ -18,53 +10,59 @@
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Debug_NugetExe|AnyCPU'">
     <Reference Include="NuGet">
-      <HintPath Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">$(NugetReferenceRoot)NuGet.CommandLine$(NugetReferenceSubpath)NuGet.exe</HintPath>
-      <HintPath Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">$(NugetReferenceRoot)NuGet.CommandLine.5.1.0\tools\NuGet.exe</HintPath>
+      <HintPath>..\..\packages\NuGet.CommandLine.5.1.0\tools\NuGet.exe</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Reference Include="NuGet">
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.CommandLine\16.0\bin\Debug\net472\NuGet.exe</HintPath>
     </Reference>
     <Reference Include="NuGet.Commands, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Commands$(NugetReferenceSubpath)NuGet.Commands.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Commands\16.0\bin\Debug\net472\NuGet.Commands.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Common, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Common$(NugetReferenceSubpath)NuGet.Common.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Common\16.0\bin\Debug\net472\NuGet.Common.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Configuration, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Configuration$(NugetReferenceSubpath)NuGet.Configuration.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Configuration\16.0\bin\Debug\net472\NuGet.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Credentials, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Credentials$(NugetReferenceSubpath)NuGet.Credentials.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Credentials\16.0\bin\Debug\net472\NuGet.Credentials.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.DependencyResolver.Core, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.DependencyResolver.Core$(NugetReferenceSubpath)NuGet.DependencyResolver.Core.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.DependencyResolver.Core\16.0\bin\Debug\net472\NuGet.DependencyResolver.Core.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Frameworks, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Frameworks$(NugetReferenceSubpath)NuGet.Frameworks.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Frameworks\16.0\bin\Debug\net472\NuGet.Frameworks.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.LibraryModel, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.LibraryModel$(NugetReferenceSubpath)NuGet.LibraryModel.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.LibraryModel\16.0\bin\Debug\net472\NuGet.LibraryModel.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Packaging$(NugetReferenceSubpath)NuGet.Packaging.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Packaging\16.0\bin\Debug\net472\NuGet.Packaging.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.ProjectModel, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.ProjectModel$(NugetReferenceSubpath)NuGet.ProjectModel.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.ProjectModel\16.0\bin\Debug\net472\NuGet.ProjectModel.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Protocol, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Protocol$(NugetReferenceSubpath)NuGet.Protocol.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Protocol\16.0\bin\Debug\net472\NuGet.Protocol.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Versioning, Version=5.1.0.5, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NugetReferenceRoot)NuGet.Versioning$(NugetReferenceSubpath)NuGet.Versioning.dll</HintPath>
+      <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Versioning\16.0\bin\Debug\net472\NuGet.Versioning.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

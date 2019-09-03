@@ -1,5 +1,5 @@
 ﻿using System.IO;
-
+using Link.Command;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NuGet.Link.Command;
@@ -36,6 +36,52 @@ namespace Nuget.Link.Tests
             {
                 Directory.Delete(Constants.TEST_OUTPUT_DIR, true);
             }
+        }
+
+        [TestMethod]
+        public void LinkTargetSdkProject()
+        {
+            // Arrange
+            var targetDirectory = Path.Combine(Constants.TEST_SOLUTION_SRC, "Console.PackageReference");
+            var dllPath = Path.Combine(targetDirectory, @"bin\Debug\netcoreapp2.1\Package.Sdk.dll");
+
+            var console = new NuGet.CommandLine.Console();
+            var linkArgs = new LinkArgs
+            {
+                PackageId = "Package.Sdk",
+                CurrentDirectory = targetDirectory,
+                Console = console,
+            };
+            var runner = new LinkCommandRunner(linkArgs);
+
+            // Act
+            runner.LinkTarget();
+
+            // Assert
+            FileAssert.Exists(dllPath);
+        }
+
+        [TestMethod]
+        public void LinkTargetCsprojProject()
+        {
+            // Arrange
+            var targetDirectory = Path.Combine(Constants.TEST_SOLUTION_SRC, "Console.PackageConfig");
+            var dllPath = Path.Combine(targetDirectory, @"bin\Debug\Package.Csproj.dll");
+
+            var console = new NuGet.CommandLine.Console();
+            var linkArgs = new LinkArgs
+            {
+                PackageId = "Package.Csproj",
+                CurrentDirectory = targetDirectory,
+                Console = console,
+            };
+            var runner = new LinkCommandRunner(linkArgs);
+
+            // Act
+            runner.LinkTarget();
+
+            // Assert
+            FileAssert.Exists(dllPath);
         }
 
         [TestMethod]

@@ -1,5 +1,5 @@
 ﻿using System.IO;
-
+using Link.Command;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NuGet.Link.Command;

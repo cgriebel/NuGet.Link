@@ -8,6 +8,7 @@ using NuGet.CommandLine;
 using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
+using NuGet.Link.Command;
 using NuGet.Link.Command.Args;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
@@ -15,13 +16,13 @@ using NuGet.Packaging.Rules;
 using NuGet.ProjectModel;
 using NuGet.Versioning;
 
-using static NuGet.Commands.PackCommandRunner;
-
-namespace NuGet.Link.Command
+namespace Link.Command
 {
     public class BaseCommandRunner
     {
-        private PackArgs _packArgs;
+
+        public static string BasePath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NugetLink");
+        protected PackArgs _packArgs;
 
         private static readonly string[] _defaultExcludes = new[] {
             // Exclude previous package files
@@ -44,10 +45,10 @@ namespace NuGet.Link.Command
 
         private readonly HashSet<string> _excludes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        private CreateProjectFactory _createProjectFactory;
+        private PackCommandRunner.CreateProjectFactory _createProjectFactory;
 
         public BaseCommandRunner(BaseArgs baseArgs)
-            //: base(packArgs, ProjectFactory.ProjectCreator)
+        //: base(packArgs, ProjectFactory.ProjectCreator)
         {
             _createProjectFactory = ProjectFactory.ProjectCreator;
             var packArgs = new PackArgs();
@@ -84,7 +85,7 @@ namespace NuGet.Link.Command
             this._packArgs = packArgs;
         }
 
-        public PackageBuilder CreatePackageBuilder()
+        protected PackageBuilder CreatePackageBuilder()
         {
             var path = Path.GetFullPath(Path.Combine(_packArgs.CurrentDirectory, _packArgs.Path));
             return CreatePackageBuilder(path);
@@ -326,6 +327,286 @@ namespace NuGet.Link.Command
                         throw new PackagingException(NuGetLogCode.NU5003, string.Format(CultureInfo.CurrentCulture, Strings.Error_InvalidTargetFramework, reference.AssemblyName));
                     }
                 }
+            }
+        }
+
+        public PackageArchiveReader BuildPackage(PackageBuilder builder, string outputPath = null)
+        {
+            outputPath = outputPath ?? GetOutputPath(builder, false, builder.Version);
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+            // Track if the package file was already present on disk
+            bool isExistingPackage = File.Exists(outputPath);
+            try
+            {
+                using (Stream stream = File.Create(outputPath))
+                {
+                    builder.Save(stream);
+                }
+            }
+            catch
+            {
+                if (!isExistingPackage && File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+                throw;
+            }
+
+            if (_packArgs.LogLevel == LogLevel.Verbose)
+            {
+                PrintVerbose(outputPath, builder);
+            }
+
+            if (_packArgs.InstallPackageToOutputPath)
+            {
+                _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(string.Format(CultureInfo.CurrentCulture, Strings.Log_PackageCommandInstallPackageToOutputPath, "Package", outputPath), LogLevel.Minimal));
+                WriteResolvedNuSpecToPackageOutputDirectory(builder);
+                WriteSHA512PackageHash(builder);
+            }
+
+            // _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(String.Format(CultureInfo.CurrentCulture, Strings.Log_PackageCommandSuccess, outputPath), LogLevel.Minimal));
+            return new PackageArchiveReader(outputPath);
+        }
+
+        private void PrintVerbose(string outputPath, PackageBuilder builder)
+        {
+            WriteLine(String.Empty);
+            var package = new PackageArchiveReader(outputPath);
+
+            WriteLine("Id: {0}", builder.Id);
+            WriteLine("Version: {0}", builder.Version);
+            WriteLine("Authors: {0}", String.Join(", ", builder.Authors));
+            WriteLine("Description: {0}", builder.Description);
+            if (builder.LicenseUrl != null)
+            {
+                WriteLine("License Url: {0}", builder.LicenseUrl);
+            }
+            if (builder.ProjectUrl != null)
+            {
+                WriteLine("Project Url: {0}", builder.ProjectUrl);
+            }
+            if (builder.Tags.Any())
+            {
+                WriteLine("Tags: {0}", String.Join(", ", builder.Tags));
+            }
+            if (builder.DependencyGroups.Any())
+            {
+                WriteLine("Dependencies: {0}", String.Join(", ", builder.DependencyGroups.SelectMany(d => d.Packages).Select(d => d.ToString())));
+            }
+            else
+            {
+                WriteLine("Dependencies: None");
+            }
+
+            WriteLine(String.Empty);
+
+            foreach (var file in package.GetFiles().OrderBy(p => p))
+            {
+                WriteLine(Strings.Log_PackageCommandAddedFile, file);
+            }
+
+            WriteLine(String.Empty);
+        }
+
+        private void WriteLine(string message, object arg = null)
+        {
+            _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(String.Format(CultureInfo.CurrentCulture, message, arg?.ToString()), LogLevel.Information));
+        }
+
+
+        /// <summary>
+        /// Writes the resolved NuSpec file to the package output directory.
+        /// </summary>
+        /// <param name="builder">The package builder</param>
+        private void WriteResolvedNuSpecToPackageOutputDirectory(PackageBuilder builder)
+        {
+            var outputPath = GetOutputPath(builder, false, builder.Version);
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+            var resolvedNuSpecOutputPath = Path.Combine(
+                Path.GetDirectoryName(outputPath),
+                new VersionFolderPathResolver(outputPath).GetManifestFileName(builder.Id, builder.Version));
+
+            _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(string.Format(CultureInfo.CurrentCulture, Strings.Log_PackageCommandInstallPackageToOutputPath, "NuSpec", resolvedNuSpecOutputPath), LogLevel.Minimal));
+
+            if (string.Equals(_packArgs.Path, resolvedNuSpecOutputPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new PackagingException(NuGetLogCode.NU5001, string.Format(CultureInfo.CurrentCulture, Strings.Error_WriteResolvedNuSpecOverwriteOriginal, _packArgs.Path));
+            }
+
+            // We must use the Path.GetTempPath() which NuGetFolderPath.Temp uses as a root because writing temp files to the package directory with a guid would break some build tools caching
+            var manifest = new Manifest(new ManifestMetadata(builder), null);
+            var tempOutputPath = Path.Combine(NuGetEnvironment.GetFolderPath(NuGetFolderPath.Temp), Path.GetFileName(resolvedNuSpecOutputPath));
+            using (Stream stream = new FileStream(tempOutputPath, FileMode.Create))
+            {
+                manifest.Save(stream);
+            }
+
+            FileUtility.Replace(tempOutputPath, resolvedNuSpecOutputPath);
+        }
+
+        /// <summary>
+        /// Writes the sha512 package hash file to the package output directory
+        /// </summary>
+        /// <param name="builder">The package builder</param>
+        private void WriteSHA512PackageHash(PackageBuilder builder)
+        {
+            var outputPath = GetOutputPath(builder, false, builder.Version);
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+            var sha512OutputPath = Path.Combine(outputPath + ".sha512");
+
+            // We must use the Path.GetTempPath() which NuGetFolderPath.Temp uses as a root because writing temp files to the package directory with a guid would break some build tools caching
+            var tempOutputPath = Path.Combine(NuGetEnvironment.GetFolderPath(NuGetFolderPath.Temp), Path.GetFileName(sha512OutputPath));
+
+            _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(string.Format(CultureInfo.CurrentCulture, Strings.Log_PackageCommandInstallPackageToOutputPath, "SHA512", sha512OutputPath), LogLevel.Minimal));
+
+            byte[] sha512hash;
+            var cryptoHashProvider = new CryptoHashProvider("SHA512");
+            using (var fileStream = new FileStream(outputPath, FileMode.Open, FileAccess.Read))
+            {
+                sha512hash = cryptoHashProvider.CalculateHash(fileStream);
+            }
+
+            File.WriteAllText(tempOutputPath, Convert.ToBase64String(sha512hash));
+            FileUtility.Replace(tempOutputPath, sha512OutputPath);
+        }
+
+        // Gets the full path of the resulting nuget package including the file name
+        public string GetOutputPath(PackageBuilder builder, bool symbols = false, NuGetVersion nugetVersion = null, string outputDirectory = null, bool isNupkg = true)
+        {
+            NuGetVersion versionToUse;
+            if (nugetVersion != null)
+            {
+                versionToUse = nugetVersion;
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(_packArgs.Version))
+                {
+                    if (builder.Version == null)
+                    {
+                        // If the version is null, the user will get an error later saying that a version
+                        // is required. Specifying a version here just keeps it from throwing until
+                        // it gets to the better error message. It won't actually get used.
+                        versionToUse = NuGetVersion.Parse("1.0.0");
+                    }
+                    else
+                    {
+                        versionToUse = builder.Version;
+                    }
+                }
+                else
+                {
+                    versionToUse = NuGetVersion.Parse(_packArgs.Version);
+                }
+            }
+
+            var outputFile = GetOutputFileName(builder.Id,
+                versionToUse,
+                isNupkg: isNupkg,
+                symbols: symbols,
+                symbolPackageFormat: _packArgs.SymbolPackageFormat,
+                excludeVersion: _packArgs.OutputFileNamesWithoutVersion);
+
+            var finalOutputDirectory = _packArgs.OutputDirectory ?? _packArgs.CurrentDirectory;
+            finalOutputDirectory = outputDirectory ?? finalOutputDirectory;
+            return Path.Combine(finalOutputDirectory, outputFile);
+        }
+
+        public static string GetOutputFileName(string packageId, NuGetVersion version, bool isNupkg, bool symbols, SymbolPackageFormat symbolPackageFormat, bool excludeVersion = false)
+        {
+            // Output file is {id}.{version}
+            var normalizedVersion = version.ToNormalizedString();
+            var outputFile = excludeVersion ? packageId : packageId + "." + normalizedVersion;
+
+            var extension = isNupkg ? NuGetConstants.PackageExtension : NuGetConstants.ManifestExtension;
+            var symbolsExtension = isNupkg
+                ? (symbolPackageFormat == SymbolPackageFormat.Snupkg ? NuGetConstants.SnupkgExtension : NuGetConstants.SymbolsExtension)
+                : NuGetConstants.ManifestSymbolsExtension;
+
+            // If this is a source package then add .symbols.nupkg to the package file name
+            if (symbols)
+            {
+                outputFile += symbolsExtension;
+            }
+            else
+            {
+                outputFile += extension;
+            }
+
+            return outputFile;
+        }
+
+        public IEnumerable<FileLink> GetFileLinks(string packageId)
+        {
+            var rv = new List<FileLink>();
+            var archivePath = GetArchivePath(packageId);
+            using (var sourceArchive = LinkPackageArchiveReader.Create(archivePath))
+            {
+                var path = Path.GetFullPath(Path.Combine(_packArgs.CurrentDirectory, _packArgs.Path));
+                var projectWrapper = ProjectWrapper.ProjectCreator(_packArgs, path);
+
+                var supportedFrameworks = sourceArchive.GetSupportedFrameworks();
+
+                var frameworkDir = sourceArchive.GetShortFolderName(projectWrapper.TargetFramework);
+                if (frameworkDir != null)
+                {
+                    var root = Path.GetDirectoryName(archivePath);
+                    var dir = Path.Combine(root, "lib", frameworkDir);
+                    if (Directory.Exists(dir))
+                    {
+                        foreach (var file in Directory.GetFiles(dir))
+                        {
+                            var fileName = Path.GetFileName(file);
+                            var targetPath = Path.Combine(projectWrapper.OutputPath, fileName);
+                            rv.Add(new FileLink
+                            {
+                                Target = targetPath,
+                                Source = file
+                            });
+                        }
+                    }
+                    else
+                    {
+                        //TODO: log something
+                    }
+                }
+                else
+                {
+                    // TODO: Log someting
+                }
+            }
+            return rv;
+        }
+
+        private string GetArchivePath(string packageId)
+        {
+            //var directory = GetPackageDirectory(packageId);
+            // todo split version if provided
+            var packageFolder = packageId;
+            var packageRoot = Path.Combine(BasePath, packageFolder);
+            if (Directory.Exists(packageRoot))
+            {
+                var folders = Directory.EnumerateDirectories(packageRoot);
+                // TODO: Pick highest version if none is provided
+                var directory = folders.First();
+                var archives = Directory.GetFiles(directory, "*.nupkg");
+                if (archives.Length == 1)
+                {
+                    return archives[0];
+                }
+                else
+                {
+                    //TODO: Log something
+                    return null;
+                }
+            }
+            else
+            {
+                // TODO: Display error
+                return null;
             }
         }
     }

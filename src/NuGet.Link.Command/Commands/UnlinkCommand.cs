@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using NuGet;
 using NuGet.Link.Command.Args;
 using NuGet.Packaging.Core;
 
-namespace NuGet.Link.Command
+namespace Link.Command
 {
     // TODO: better description, add additional properties
     [Command("Unlink", "Unlinks a linked package")]
-    public class UnlinkCommand : CommandLine.Command
+    public class UnlinkCommand : NuGet.CommandLine.Command
     {
         internal static readonly string SymbolsExtension = ".symbols" + PackagingCoreConstants.NupkgExtension;
 

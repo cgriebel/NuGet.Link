@@ -1,23 +1,29 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 using NuGet.Link.Command.Args;
 
-namespace NuGet.Link.Command
+namespace Link.Command
 {
     public class UnlinkCommandRunner : BaseCommandRunner
     {
-        public static string BasePath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NugetLink");
-
-
+        private readonly UnlinkArgs _unlinkArgs;
 
         public UnlinkCommandRunner(UnlinkArgs packArgs)
             : base(packArgs)
         {
+            _unlinkArgs = packArgs;
         }
 
         public void UnlinkTarget()
         {
+            _unlinkArgs.Console.WriteWarning("");
+            foreach (var fileLink in GetFileLinks(_unlinkArgs.PackageId))
+            {
+                if (File.Exists(fileLink.Target))
+                {
+                    File.Delete(fileLink.Target);
+                }
+            }
         }
 
         public void UnlinkSource()

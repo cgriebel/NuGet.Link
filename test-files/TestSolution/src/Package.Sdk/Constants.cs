@@ -2,6 +2,8 @@
 {
     public static class Constants
     {
-        public static string Message => "From Sdk Linked Package";
+        private static string _packageSourceMessage = "From Sdk Package Source";
+        private static string _linkedMessage = "From Sdk Linked Package";
+        public static string Message => _linkedMessage;
     }
 }
