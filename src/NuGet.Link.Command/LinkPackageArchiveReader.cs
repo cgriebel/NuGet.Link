@@ -6,7 +6,7 @@ using NuGet.Packaging;
 
 namespace Link.Command
 {
-    public class LinkPackageArchiveReader : PackageArchiveReader, IDisposable
+    public sealed class LinkPackageArchiveReader : PackageArchiveReader
     {
         private Stream _stream;
 
@@ -17,13 +17,15 @@ namespace Link.Command
         public static LinkPackageArchiveReader Create(string filePath)
         {
             var fileStream = File.OpenRead(filePath);
-            var rv = new LinkPackageArchiveReader(fileStream);
-            rv._stream = fileStream;
-            return rv;
+            return new LinkPackageArchiveReader(fileStream)
+            {
+                _stream = fileStream
+            };
         }
 
-        public void Dispose()
+        public new void Dispose()
         {
+            base.Dispose();
             _stream?.Dispose();
         }
 

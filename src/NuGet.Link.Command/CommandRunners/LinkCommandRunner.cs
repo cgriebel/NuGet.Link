@@ -1,7 +1,6 @@
 ﻿using System.IO;
 
-using Murphy.SymbolicLink;
-
+using NuGet.Link.Command;
 using NuGet.Link.Command.Args;
 using NuGet.Packaging;
 
@@ -38,7 +37,7 @@ namespace Link.Command
                     File.Delete(fileLink.Target);
                 }
                 Directory.CreateDirectory(Path.GetDirectoryName(fileLink.Target));
-                SymbolicLink.create(fileLink.Source, fileLink.Target);
+                SymbolicLink.Create(fileLink.Source, fileLink.Target);
             }
         }
 
@@ -64,7 +63,7 @@ namespace Link.Command
                         File.Delete(target);
                     }
 
-                    SymbolicLink.create(physicalFile.SourcePath, target);
+                    SymbolicLink.Create(physicalFile.SourcePath, target);
                 }
             }
         }
