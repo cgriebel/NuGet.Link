@@ -1,8 +1,9 @@
 ﻿using System.IO;
+
 using Link.Command;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using NuGet.Link.Command;
 using NuGet.Link.Command.Args;
 
 using NUnit.Framework;
@@ -56,7 +57,7 @@ namespace Nuget.Link.Tests
             var runner = new UnlinkCommandRunner(linkArgs);
 
             // Act
-            runner.UnlinkSource();
+            runner.Unlink();
 
             // Assert
             DirectoryAssert.DoesNotExist(Path.Combine(Constants.TEST_OUTPUT_DIR, LinkCommandRunner.BasePath, @"Package.Sdk\1.0.0"));
@@ -80,7 +81,7 @@ namespace Nuget.Link.Tests
             var runner = new UnlinkCommandRunner(packArgs);
 
             // Act
-            runner.UnlinkSource();
+            runner.Unlink();
 
             // Assert
             DirectoryAssert.DoesNotExist(Path.Combine(Constants.TEST_OUTPUT_DIR, LinkCommandRunner.BasePath, @"Package.Csproj\1.0.0"));

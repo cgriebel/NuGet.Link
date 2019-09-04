@@ -14,7 +14,19 @@ namespace Link.Command
             _unlinkArgs = packArgs;
         }
 
-        public void UnlinkTarget()
+        public void Unlink()
+        {
+            if(_unlinkArgs.PackageId == null)
+            {
+                UnlinkSource();
+            }
+            else
+            {
+                UnlinkTarget();
+            }
+        }
+
+        private void UnlinkTarget()
         {
             _unlinkArgs.Console.WriteWarning("");
             foreach (var fileLink in GetFileLinks(_unlinkArgs.PackageId))
@@ -26,7 +38,7 @@ namespace Link.Command
             }
         }
 
-        public void UnlinkSource()
+        private void UnlinkSource()
         {
             var packageBuilder = CreatePackageBuilder();
             var packageRoot = Path.Combine(BasePath, packageBuilder.Id, packageBuilder.Version.ToNormalizedString());

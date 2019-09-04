@@ -1,8 +1,9 @@
 ﻿using System.IO;
+
 using Link.Command;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using NuGet.Link.Command;
 using NuGet.Link.Command.Args;
 
 using NUnit.Framework;
@@ -55,7 +56,7 @@ namespace Nuget.Link.Tests
             var runner = new LinkCommandRunner(linkArgs);
 
             // Act
-            runner.LinkTarget();
+            runner.Link();
 
             // Assert
             FileAssert.Exists(dllPath);
@@ -78,7 +79,7 @@ namespace Nuget.Link.Tests
             var runner = new LinkCommandRunner(linkArgs);
 
             // Act
-            runner.LinkTarget();
+            runner.Link();
 
             // Assert
             FileAssert.Exists(dllPath);
@@ -100,7 +101,7 @@ namespace Nuget.Link.Tests
             var runner = new LinkCommandRunner(linkArgs);
 
             // Act
-            runner.LinkSource();
+            runner.Link();
 
             // Assert
             FileAssert.Exists(dllPath);
@@ -122,7 +123,7 @@ namespace Nuget.Link.Tests
             var runner = new LinkCommandRunner(packArgs);
 
             // Act
-            runner.LinkSource();
+            runner.Link();
 
             // Assert
             FileAssert.Exists(dllPath);

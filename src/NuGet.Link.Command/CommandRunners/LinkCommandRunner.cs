@@ -17,7 +17,19 @@ namespace Link.Command
             _linkArgs = linkArgs;
         }
 
-        public void LinkTarget()
+        public void Link()
+        {
+            if(_linkArgs.PackageId == null)
+            {
+                LinkSource();
+            }
+            else
+            {
+                LinkTarget();
+            }
+        }
+
+        private void LinkTarget()
         {
             foreach(var fileLink in GetFileLinks(_linkArgs.PackageId))
             {
@@ -30,7 +42,7 @@ namespace Link.Command
             }
         }
 
-        public void LinkSource()
+        private void LinkSource()
         {
             var packageBuilder = CreatePackageBuilder();
             var packageRoot = Path.Combine(BasePath, packageBuilder.Id, packageBuilder.Version.ToNormalizedString());
