@@ -12,6 +12,7 @@ namespace NuGet.Link.Command
     {
         private static class Unix
         {
+#pragma warning disable IDE1006 // Naming Styles
             public static IOException Failure(string message)
             {
                 return new IOException($"{message}: {Marshal.PtrToStringAnsi(strerror(Marshal.GetLastWin32Error()))}");
@@ -29,6 +30,7 @@ namespace NuGet.Link.Command
             [DllImport("libc", SetLastError = true)]
             [return: MarshalAs(UnmanagedType.LPStr)]
             public static extern string realpath([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr buf);
+#pragma warning restore IDE1006 // Naming Styles
         }
 
         private static class Win32
@@ -47,20 +49,23 @@ namespace NuGet.Link.Command
 
             internal enum FileAccess
             {
-                All = 0x10000000,
                 Read = int.MinValue,
-                Write = 0x40000000,
-                Execute = 0x20000000
+                All = 0x10000000,
+                Execute = 0x20000000,
+                Write = 0x40000000
             }
 
+            // see https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlea
             internal enum PathNameFlags
             {
                 FileNameNormalized = 0x0,
-                FileNameOpened = 0x8,
+#pragma warning disable RCS1234 // Duplicate enum value. - this flag can mean multiple things
                 VolumeNameDOS = 0x0,
+#pragma warning restore RCS1234 // Duplicate enum value.
                 VolumeNameGuid = 0x1,
                 VolumeNameNT = 0x2,
-                VolumeNameNone = 0x4
+                VolumeNameNone = 0x4,
+                FileNameOpened = 0x8
             }
 
             internal const int BackupSemantics = 33554432;
@@ -89,55 +94,41 @@ namespace NuGet.Link.Command
             internal static extern int GetFinalPathNameByHandle(SafeFileHandle handle, StringBuilder path, int pathlen, PathNameFlags flags);
         }
 
-        public static void Create(string target, string path)
+        public static void Create(string target, string symbolicLink)
         {
-            string text = Path.Combine(Path.GetDirectoryName(path), target);
+            if (!File.Exists(target) && !Directory.Exists(target))
+            {
+                FileNotFoundException ex = new FileNotFoundException("Link target does not exist", target);
+                throw ex;
+            }
             switch (Environment.OSVersion.Platform)
             {
                 default:
                     throw new InvalidOperationException("Unsupported operating system");
                 case PlatformID.Unix:
                 case PlatformID.MacOSX:
+                    if (Unix.symlink(target, symbolicLink) < 0)
                     {
-                        if (!File.Exists(text) && !Directory.Exists(text))
-                        {
-                            FileNotFoundException ex = new FileNotFoundException("Link target does not exist", text);
-                            throw ex;
-                        }
-                        if (Unix.symlink(target, path) < 0)
-                        {
-                            throw Unix.Failure("Could not create link");
-                        }
-                        break;
+                        throw Unix.Failure("Could not create link");
                     }
+                    break;
                 case PlatformID.Win32NT:
-                    {
-                        Win32.SymbolicLinkFlags flags;
-                        if (File.Exists(text))
-                        {
-                            flags = Win32.SymbolicLinkFlags.File;
-                        }
-                        else
-                        {
-                            if (!Directory.Exists(text))
-                            {
-                                FileNotFoundException ex = new FileNotFoundException("Link target does not exist", text);
-                                throw ex;
-                            }
-                            flags = Win32.SymbolicLinkFlags.Directory;
-                        }
-                        flags |= Win32.SymbolicLinkFlags.AllowUnprivilegedCreate;
-                        text = !Path.IsPathRooted(target)
-                            ? target 
-                            : "\\\\?\\" + Path.GetFullPath(target);
+                    Win32.SymbolicLinkFlags flags = File.Exists(target)
+                        ? Win32.SymbolicLinkFlags.File
+                        : Win32.SymbolicLinkFlags.Directory;
 
-                        string target2 = "\\\\?\\" + Path.GetFullPath(path);
-                        if (!Win32.CreateSymbolicLink(target2, text, flags))
-                        {
-                            throw Win32.Failure("Could not create link");
-                        }
-                        break;
+                    flags |= Win32.SymbolicLinkFlags.AllowUnprivilegedCreate;
+
+                    target = !Path.IsPathRooted(target)
+                        ? target
+                        : "\\\\?\\" + Path.GetFullPath(target);
+
+                    symbolicLink = "\\\\?\\" + Path.GetFullPath(symbolicLink);
+                    if (!Win32.CreateSymbolicLink(symbolicLink, target, flags))
+                    {
+                        throw Win32.Failure("Could not create link");
                     }
+                    break;
             }
         }
     }

@@ -3,6 +3,6 @@
     public class Constants
     {
         public const string TEST_SOLUTION_SRC = @"C:\Dev\NuGet.Link\test-files\TestSolution\src\";
-        public const string TEST_OUTPUT_DIR = "TestOutput";
+        public const string TestBasePath = "TestOutput";
     }
 }

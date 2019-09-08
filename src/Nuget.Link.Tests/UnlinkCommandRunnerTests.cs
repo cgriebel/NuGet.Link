@@ -2,28 +2,26 @@
 
 using Link.Command;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using NuGet.Link.Command.Args;
 
 using NUnit.Framework;
 
 namespace Nuget.Link.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class UnlinkCommandRunnerTests
     {
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            LinkCommandRunner.BasePath = Constants.TEST_OUTPUT_DIR;
+            LinkCommandRunner.BasePath = Constants.TestBasePath;
         }
 
         [SetUp]
         public void Setup()
         {
             CleanUp();
-            Directory.CreateDirectory(Constants.TEST_OUTPUT_DIR);
+            Directory.CreateDirectory(Constants.TestBasePath);
         }
 
         [TearDown]
@@ -34,17 +32,17 @@ namespace Nuget.Link.Tests
 
         private void CleanUp()
         {
-            if (Directory.Exists(Constants.TEST_OUTPUT_DIR))
+            if (Directory.Exists(Constants.TestBasePath))
             {
-                Directory.Delete(Constants.TEST_OUTPUT_DIR, true);
+                Directory.Delete(Constants.TestBasePath, true);
             }
         }
 
-        [TestMethod]
+        [Test]
         public void UnlinkSourceSdkProject()
         {
             // Arrange
-            var dllPath = Path.Combine(Constants.TEST_OUTPUT_DIR, @"Package.Sdk\1.0.0\lib\netstandard2.0\Package.Sdk.dll");
+            var dllPath = Path.Combine(Constants.TestBasePath, @"Package.Sdk\1.0.0\lib\netstandard2.0\Package.Sdk.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(dllPath));
             File.WriteAllText(dllPath, "");
             var csprojPath = Path.Combine(Constants.TEST_SOLUTION_SRC, @"Package.Sdk\Package.Sdk.csproj");
@@ -60,10 +58,10 @@ namespace Nuget.Link.Tests
             runner.Unlink();
 
             // Assert
-            DirectoryAssert.DoesNotExist(Path.Combine(Constants.TEST_OUTPUT_DIR, LinkCommandRunner.BasePath, @"Package.Sdk\1.0.0"));
+            DirectoryAssert.DoesNotExist(Path.Combine(Constants.TestBasePath, LinkCommandRunner.BasePath, @"Package.Sdk\1.0.0"));
         }
 
-        [TestMethod]
+        [Test]
         public void UnlinkSourceCsprojProject()
         {
             // Arrange
@@ -84,10 +82,10 @@ namespace Nuget.Link.Tests
             runner.Unlink();
 
             // Assert
-            DirectoryAssert.DoesNotExist(Path.Combine(Constants.TEST_OUTPUT_DIR, LinkCommandRunner.BasePath, @"Package.Csproj\1.0.0"));
+            DirectoryAssert.DoesNotExist(Path.Combine(Constants.TestBasePath, LinkCommandRunner.BasePath, @"Package.Csproj\1.0.0"));
         }
 
-        //[TestMethod]
+        //[Test]
         //public void LinkCsprojNuSpec()
         //{
         //    // Arrange

@@ -4,6 +4,6 @@
     {
         private static string _packageSourceMessage = "From Sdk Package Source";
         private static string _linkedMessage = "From Sdk Linked Package";
-        public static string Message => _linkedMessage;
+        public static string Message => _packageSourceMessage;
     }
 }

@@ -18,9 +18,8 @@ using NuGet.Versioning;
 
 namespace Link.Command
 {
-    public class BaseCommandRunner
+    public class BaseCommandRunner : MSBuildUser
     {
-
         public static string BasePath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NugetLink");
         protected PackArgs _packArgs;
 
@@ -45,24 +44,22 @@ namespace Link.Command
 
         private readonly HashSet<string> _excludes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        private PackCommandRunner.CreateProjectFactory _createProjectFactory;
-
         public BaseCommandRunner(BaseArgs baseArgs)
-        //: base(packArgs, ProjectFactory.ProjectCreator)
         {
-            _createProjectFactory = ProjectFactory.ProjectCreator;
-            var packArgs = new PackArgs();
-            packArgs.CurrentDirectory = baseArgs.CurrentDirectory;
-            packArgs.Logger = baseArgs.Console;
-            packArgs.Arguments = new string[0];
-            packArgs.MsBuildDirectory = new Lazy<string>(() => MsBuildUtility.GetMsBuildDirectoryFromMsBuildPath(null, null, baseArgs.Console).Value.Path);
+            var packArgs = new PackArgs
+            {
+                CurrentDirectory = baseArgs.CurrentDirectory,
+                Logger = baseArgs.Console,
+                Arguments = new string[0],
+                MsBuildDirectory = new Lazy<string>(() => MsBuildUtility.GetMsBuildDirectoryFromMsBuildPath(null, null, baseArgs.Console).Value.Path)
+            };
 
             // Get the input file
             packArgs.Path = PackCommandRunner.GetInputFile(packArgs);
 
             // Set the current directory if the files being packed are in a different directory
             PackCommandRunner.SetupCurrentDirectory(packArgs);
-            packArgs.Build = false;
+            packArgs.Build = true;
             packArgs.Exclude = new string[0];
             switch (baseArgs.Verbosity)
             {
@@ -138,12 +135,12 @@ namespace Link.Command
         private PackageBuilder CreatePackageBuilderFromProjectFile(string path)
         {
             // PackTargetArgs is only set for dotnet.exe pack code path, hence the check.
-            if ((string.IsNullOrEmpty(_packArgs.MsBuildDirectory?.Value) || _createProjectFactory == null) && _packArgs.PackTargetArgs == null)
+            if ((string.IsNullOrEmpty(_packArgs.MsBuildDirectory?.Value)) && _packArgs.PackTargetArgs == null)
             {
                 throw new PackagingException(NuGetLogCode.NU5009, string.Format(CultureInfo.CurrentCulture, Strings.Error_CannotFindMsbuild));
             }
 
-            var factory = _createProjectFactory.Invoke(_packArgs, path);
+            var factory = CreateProjectFactory(_packArgs, path);
             if (_packArgs.WarningProperties == null && _packArgs.PackTargetArgs == null)
             {
                 _packArgs.WarningProperties = factory.GetWarningPropertiesForProject();
@@ -182,6 +179,41 @@ namespace Link.Command
             return mainPackageBuilder;
         }
 
+        public IProjectFactory CreateProjectFactory(PackArgs packArgs, string path)
+        {
+            var msbuildDirectory = packArgs.MsBuildDirectory.Value;
+            LoadAssemblies(msbuildDirectory);
+
+            // Create project, allowing for assembly load failures
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolve);
+            dynamic project;
+            try
+            {
+                var projectCollection = Activator.CreateInstance(_projectCollectionType);
+                project = Activator.CreateInstance(
+                    _projectType,
+                    path,
+                    packArgs.Properties,
+                    null,
+                    projectCollection);
+            }
+            finally
+            {
+                AppDomain.CurrentDomain.AssemblyResolve -= new ResolveEventHandler(AssemblyResolve);
+            }
+
+            return new ProjectFactory(packArgs.MsBuildDirectory.Value, project)
+            {
+                IsTool = packArgs.Tool,
+                LogLevel = packArgs.LogLevel,
+                Logger = packArgs.Logger,
+                MachineWideSettings = packArgs.MachineWideSettings,
+                Build = packArgs.Build,
+                IncludeReferencedProjects = packArgs.IncludeReferencedProjects,
+                SymbolPackageFormat = packArgs.SymbolPackageFormat
+            };
+        }
+
         private void InitCommonPackageBuilderProperties(PackageBuilder builder)
         {
             if (!string.IsNullOrEmpty(_packArgs.Version))
@@ -205,7 +237,6 @@ namespace Link.Command
             {
                 builder.MinClientVersion = _packArgs.MinClientVersion;
             }
-
 
             CheckForUnsupportedFrameworks(builder);
 
@@ -277,7 +308,6 @@ namespace Link.Command
                             _packArgs.Logger.Log(PackagingLogMessage.CreateWarning(
                                 string.Format(CultureInfo.CurrentCulture, Strings.Warning_FileExcludedByDefault, physicalPackageFile.SourcePath),
                                 NuGetLogCode.NU5119));
-
                         }
                     }
                 }
@@ -372,7 +402,6 @@ namespace Link.Command
         private void PrintVerbose(string outputPath, PackageBuilder builder)
         {
             WriteLine(String.Empty);
-            var package = new PackageArchiveReader(outputPath);
 
             WriteLine("Id: {0}", builder.Id);
             WriteLine("Version: {0}", builder.Version);
@@ -386,11 +415,11 @@ namespace Link.Command
             {
                 WriteLine("Project Url: {0}", builder.ProjectUrl);
             }
-            if (builder.Tags.Any())
+            if (builder.Tags.Count > 0)
             {
                 WriteLine("Tags: {0}", String.Join(", ", builder.Tags));
             }
-            if (builder.DependencyGroups.Any())
+            if (builder.DependencyGroups.Count > 0)
             {
                 WriteLine("Dependencies: {0}", String.Join(", ", builder.DependencyGroups.SelectMany(d => d.Packages).Select(d => d.ToString())));
             }
@@ -401,9 +430,12 @@ namespace Link.Command
 
             WriteLine(String.Empty);
 
-            foreach (var file in package.GetFiles().OrderBy(p => p))
+            using (var package = new PackageArchiveReader(outputPath))
             {
-                WriteLine(Strings.Log_PackageCommandAddedFile, file);
+                foreach (var file in package.GetFiles().OrderBy(p => p))
+                {
+                    WriteLine(Strings.Log_PackageCommandAddedFile, file);
+                }
             }
 
             WriteLine(String.Empty);
@@ -413,7 +445,6 @@ namespace Link.Command
         {
             _packArgs.Logger.Log(PackagingLogMessage.CreateMessage(String.Format(CultureInfo.CurrentCulture, message, arg?.ToString()), LogLevel.Information));
         }
-
 
         /// <summary>
         /// Writes the resolved NuSpec file to the package output directory.

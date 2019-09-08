@@ -1,8 +1,7 @@
 ﻿using System.IO;
+using System.Reflection;
 
 using Link.Command;
-
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NuGet.Link.Command.Args;
 
@@ -10,19 +9,37 @@ using NUnit.Framework;
 
 namespace Nuget.Link.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class LinkCommandRunnerTests
     {
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            LinkCommandRunner.BasePath = Constants.TEST_OUTPUT_DIR;
+            LinkCommandRunner.BasePath = Constants.TestBasePath;
+        }
+
+        public static void CopyFilesRecursively(DirectoryInfo source, DirectoryInfo target)
+        {
+            foreach (DirectoryInfo dir in source.GetDirectories())
+            {
+                CopyFilesRecursively(dir, target.CreateSubdirectory(dir.Name));
+            }
+
+            foreach (FileInfo file in source.GetFiles())
+            {
+                file.CopyTo(Path.Combine(target.FullName, file.Name));
+            }
         }
 
         [SetUp]
         public void Setup()
         {
             CleanUp();
+            var targetDirectory = Directory.CreateDirectory(Constants.TestBasePath);
+            var asmDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var copyFromPath = Path.Combine(asmDirectory, "../../../../test-files/linked-files");
+            var copyFromDirectory = new DirectoryInfo(copyFromPath);
+            CopyFilesRecursively(copyFromDirectory, targetDirectory);
         }
 
         [TearDown]
@@ -33,13 +50,13 @@ namespace Nuget.Link.Tests
 
         private void CleanUp()
         {
-            if (Directory.Exists(Constants.TEST_OUTPUT_DIR))
+            if (Directory.Exists(Constants.TestBasePath))
             {
-                Directory.Delete(Constants.TEST_OUTPUT_DIR, true);
+                Directory.Delete(Constants.TestBasePath, true);
             }
         }
 
-        [TestMethod]
+        [Test]
         public void LinkTargetSdkProject()
         {
             // Arrange
@@ -62,7 +79,7 @@ namespace Nuget.Link.Tests
             FileAssert.Exists(dllPath);
         }
 
-        [TestMethod]
+        [Test]
         public void LinkTargetCsprojProject()
         {
             // Arrange
@@ -85,7 +102,7 @@ namespace Nuget.Link.Tests
             FileAssert.Exists(dllPath);
         }
 
-        [TestMethod]
+        [Test]
         public void LinkSourceSdkProject()
         {
             // Arrange
@@ -107,7 +124,7 @@ namespace Nuget.Link.Tests
             FileAssert.Exists(dllPath);
         }
 
-        [TestMethod]
+        [Test]
         public void LinkSourceCsprojProject()
         {
             // Arrange
@@ -129,7 +146,7 @@ namespace Nuget.Link.Tests
             FileAssert.Exists(dllPath);
         }
 
-        //[TestMethod]
+        //[Test]
         //public void LinkCsprojNuSpec()
         //{
         //    // Arrange

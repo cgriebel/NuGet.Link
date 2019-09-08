@@ -58,5 +58,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\submodules\NuGet.Client\artifacts\NuGet.Versioning\16.0\bin\Debug\net472\NuGet.Versioning.dll</HintPath>
     </Reference>
+    <Reference Include="NuGet.Core">
+      <HintPath>..\..\submodules\NuGet.Client\packages\NuGet.Core.2.14.0-rtm-832\lib\net40-Client\NuGet.Core.dll</HintPath>
+      <Aliases>CoreV2</Aliases>
+    </Reference>
   </ItemGroup>
 </Project>
