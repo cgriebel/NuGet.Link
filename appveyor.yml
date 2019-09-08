@@ -10,4 +10,9 @@ before_build:
   - nuget restore
 build:
   project: Nuget.Link.sln
-  verbosity: detailed
+  verbosity: normal
+platform:
+  - Any CPU
+
+configuration:
+  - Release
