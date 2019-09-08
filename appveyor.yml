@@ -8,4 +8,4 @@ install:
   - git submodule update --init --recursive
 build:
   project: Nuget.Link.sln
-  verbosity: minimal
+  verbosity: detailed
