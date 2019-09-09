@@ -1,8 +1,20 @@
-﻿namespace Nuget.Link.Tests
+﻿using System.IO;
+using System.Reflection;
+
+namespace Nuget.Link.Tests
 {
     public class Constants
     {
-        public const string TEST_SOLUTION_SRC = @"C:\Dev\NuGet.Link\test-files\TestSolution\src\";
-        public const string TestBasePath = "TestOutput";
+        public static string TestSoltuionSrc =>
+            Path.Combine(RepositoryRoot, @"test-files\TestSolution\src\");
+
+        public static string TestBasePath =>
+            Path.Combine(RepositoryRoot, "TestOutput");
+
+        public static string RepositoryRoot =>
+            Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "../../../../"
+            );
     }
 }

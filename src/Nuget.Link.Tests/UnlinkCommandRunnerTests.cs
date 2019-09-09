@@ -14,7 +14,7 @@ namespace Nuget.Link.Tests
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            LinkCommandRunner.BasePath = Constants.TestBasePath;
+            BaseCommandRunner.BasePath = Constants.TestBasePath;
         }
 
         [SetUp]
@@ -45,7 +45,7 @@ namespace Nuget.Link.Tests
             var dllPath = Path.Combine(Constants.TestBasePath, @"Package.Sdk\1.0.0\lib\netstandard2.0\Package.Sdk.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(dllPath));
             File.WriteAllText(dllPath, "");
-            var csprojPath = Path.Combine(Constants.TEST_SOLUTION_SRC, @"Package.Sdk\Package.Sdk.csproj");
+            var csprojPath = Path.Combine(Constants.TestSoltuionSrc, @"Package.Sdk\Package.Sdk.csproj");
             var console = new NuGet.CommandLine.Console();
             var linkArgs = new UnlinkArgs
             {
@@ -69,7 +69,7 @@ namespace Nuget.Link.Tests
             Directory.CreateDirectory(Path.GetDirectoryName(dllPath));
             File.WriteAllText(dllPath, "");
 
-            var csprojPath = Path.Combine(Constants.TEST_SOLUTION_SRC, @"Package.Csproj\Package.Csproj.csproj");
+            var csprojPath = Path.Combine(Constants.TestSoltuionSrc, @"Package.Csproj\Package.Csproj.csproj");
             var console = new NuGet.CommandLine.Console();
             var packArgs = new UnlinkArgs
             {

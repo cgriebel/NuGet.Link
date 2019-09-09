@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Reflection;
 
 using Link.Command;
 
@@ -15,7 +14,7 @@ namespace Nuget.Link.Tests
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            LinkCommandRunner.BasePath = Constants.TestBasePath;
+            BaseCommandRunner.BasePath = Constants.TestBasePath;
         }
 
         public static void CopyFilesRecursively(DirectoryInfo source, DirectoryInfo target)
@@ -36,8 +35,7 @@ namespace Nuget.Link.Tests
         {
             CleanUp();
             var targetDirectory = Directory.CreateDirectory(Constants.TestBasePath);
-            var asmDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var copyFromPath = Path.Combine(asmDirectory, "../../../../test-files/linked-files");
+            var copyFromPath = Path.Combine(Constants.RepositoryRoot, "test-files/linked-files");
             var copyFromDirectory = new DirectoryInfo(copyFromPath);
             CopyFilesRecursively(copyFromDirectory, targetDirectory);
         }
@@ -60,7 +58,7 @@ namespace Nuget.Link.Tests
         public void LinkTargetSdkProject()
         {
             // Arrange
-            var targetDirectory = Path.Combine(Constants.TEST_SOLUTION_SRC, "Console.PackageReference");
+            var targetDirectory = Path.Combine(Constants.TestSoltuionSrc, "Console.PackageReference");
             var dllPath = Path.Combine(targetDirectory, @"bin\Debug\netcoreapp2.1\Package.Sdk.dll");
 
             var console = new NuGet.CommandLine.Console();
@@ -83,7 +81,7 @@ namespace Nuget.Link.Tests
         public void LinkTargetCsprojProject()
         {
             // Arrange
-            var targetDirectory = Path.Combine(Constants.TEST_SOLUTION_SRC, "Console.PackageConfig");
+            var targetDirectory = Path.Combine(Constants.TestSoltuionSrc, "Console.PackageConfig");
             var dllPath = Path.Combine(targetDirectory, @"bin\Debug\Package.Csproj.dll");
 
             var console = new NuGet.CommandLine.Console();
@@ -108,7 +106,7 @@ namespace Nuget.Link.Tests
             // Arrange
             var dllPath = Path.Combine(LinkCommandRunner.BasePath, @"Package.Sdk\1.0.0\lib\netstandard2.0\Package.Sdk.dll");
 
-            var csprojPath = Path.Combine(Constants.TEST_SOLUTION_SRC, @"Package.Sdk\Package.Sdk.csproj");
+            var csprojPath = Path.Combine(Constants.TestSoltuionSrc, @"Package.Sdk\Package.Sdk.csproj");
             var console = new NuGet.CommandLine.Console();
             var linkArgs = new LinkArgs
             {
@@ -130,7 +128,7 @@ namespace Nuget.Link.Tests
             // Arrange
             var dllPath = Path.Combine(LinkCommandRunner.BasePath, @"Package.Csproj\1.0.0\lib\net472\Package.Csproj.dll");
 
-            var csprojPath = Path.Combine(Constants.TEST_SOLUTION_SRC, @"Package.Csproj\Package.Csproj.csproj");
+            var csprojPath = Path.Combine(Constants.TestSoltuionSrc, @"Package.Csproj\Package.Csproj.csproj");
             var console = new NuGet.CommandLine.Console();
             var packArgs = new LinkArgs
             {
