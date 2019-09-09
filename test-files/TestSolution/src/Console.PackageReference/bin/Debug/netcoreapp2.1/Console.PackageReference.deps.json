@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v2.1",
+    "signature": "1fd35d81eaf77f2d2243413a68d991c9c11f7204"
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v2.1": {
+      "Console.PackageReference/1.0.0": {
+        "dependencies": {
+          "Package.Sdk": "1.0.0"
+        },
+        "runtime": {
+          "Console.PackageReference.dll": {}
+        }
+      },
+      "Package.Sdk/1.0.0": {
+        "runtime": {
+          "lib/netstandard2.0/Package.Sdk.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Console.PackageReference/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Package.Sdk/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-8L+XAOzgq+1x6I++S0setcoXSMQXBxRwenQ18bpOzfAipObskL+w9AtQmLFi2xjUzWqKvthWLqVBKPMYWt4pSA==",
+      "path": "package.sdk/1.0.0",
+      "hashPath": "package.sdk.1.0.0.nupkg.sha512"
+    }
+  }
+}

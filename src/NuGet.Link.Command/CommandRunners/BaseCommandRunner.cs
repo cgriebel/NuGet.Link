@@ -59,7 +59,7 @@ namespace Link.Command
 
             // Set the current directory if the files being packed are in a different directory
             PackCommandRunner.SetupCurrentDirectory(packArgs);
-            packArgs.Build = true;
+            packArgs.Build = false;
             packArgs.Exclude = new string[0];
             switch (baseArgs.Verbosity)
             {
